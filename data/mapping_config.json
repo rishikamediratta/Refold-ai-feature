@@ -1,0 +1,54 @@
+{
+  "integration_name": "HubSpot CRM -> NetSuite ERP Customer Sync",
+  "version": "1.4.0",
+  "mappings": [
+    {
+      "id": "map-001",
+      "name": "Customer Email Sync",
+      "source_field": "crm.contact_email",
+      "target_field": "erp.customer_email",
+      "description": "Maps CRM primary contact email to ERP billing email record",
+      "transformation": "direct"
+    },
+    {
+      "id": "map-002",
+      "name": "ARR Financial Reporting",
+      "source_field": "crm.annual_revenue",
+      "target_field": "erp.arr_amount",
+      "description": "Populates ERP account annual recurring revenue for credit risk calculation",
+      "transformation": "currency_usd_to_cents"
+    },
+    {
+      "id": "map-003",
+      "name": "Account Status Lifecycle",
+      "source_field": "crm.account_status",
+      "target_field": "erp.status_code",
+      "description": "Maps CRM lifecycle stage string directly to ERP account status code",
+      "transformation": "upper_case"
+    },
+    {
+      "id": "map-004",
+      "name": "First Name Sync",
+      "source_field": "crm.first_name",
+      "target_field": "erp.first_name",
+      "description": "Maps contact first name to ERP customer primary contact name",
+      "transformation": "direct"
+    },
+    {
+      "id": "map-005",
+      "name": "Last Name Sync",
+      "source_field": "crm.last_name",
+      "target_field": "erp.last_name",
+      "description": "Maps contact surname to ERP customer primary contact surname",
+      "transformation": "direct"
+    },
+    {
+      "id": "map-006",
+      "name": "External ID Linkage",
+      "source_field": "crm.contact_id",
+      "target_field": "erp.external_id",
+      "description": "Stores unique CRM identifier in ERP for bidirectional record lookup",
+      "transformation": "direct"
+    }
+  ]
+}

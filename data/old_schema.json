@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CRM Contact Object",
+  "version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "contact_id": {
+      "type": "string",
+      "description": "Unique CRM identifier for the contact",
+      "example": "CNT-98421"
+    },
+    "first_name": {
+      "type": "string",
+      "description": "Contact given name",
+      "example": "Sarah"
+    },
+    "last_name": {
+      "type": "string",
+      "description": "Contact surname",
+      "example": "Jenkins"
+    },
+    "contact_email": {
+      "type": "string",
+      "format": "email",
+      "description": "Primary communication email address",
+      "example": "s.jenkins@acmecorp.com"
+    },
+    "annual_revenue": {
+      "type": "number",
+      "description": "Associated account estimated annual revenue in USD",
+      "example": 2500000
+    },
+    "account_status": {
+      "type": "string",
+      "enum": ["LEAD", "PROSPECT", "ACTIVE", "CHURNED"],
+      "description": "Lifecycle state of the customer account",
+      "example": "ACTIVE"
+    },
+    "phone_number": {
+      "type": "string",
+      "description": "Primary phone contact",
+      "example": "+1-555-0199"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Record creation timestamp",
+      "example": "2024-01-15T09:30:00Z"
+    }
+  },
+  "required": ["contact_id", "contact_email", "account_status"]
+}
