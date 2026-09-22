@@ -1,7 +1,7 @@
 import React from 'react';
 import { Cpu, ShieldCheck, Zap, Database, Terminal } from 'lucide-react';
 
-export default function Header({ modelName, onRunAnalysis, isLoading }) {
+export default function Header({ modelName, onRunAnalysis, isLoading, hasAnalyzed }) {
   return (
     <header className="glass-panel sticky top-0 z-50 border-b border-slate-800 bg-slate-950/80 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -43,9 +43,13 @@ export default function Header({ modelName, onRunAnalysis, isLoading }) {
           </div>
 
           {/* Active Status Badge */}
-          <div className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border bg-emerald-500/10 border-emerald-500/30 text-emerald-300">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>Grok Sentinel Active</span>
+          <div className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border ${
+            hasAnalyzed 
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+              : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300'
+          }`}>
+            <span className={`w-2 h-2 rounded-full animate-pulse ${hasAnalyzed ? 'bg-emerald-400' : 'bg-indigo-400'}`}></span>
+            <span>{hasAnalyzed ? 'Analysis Active' : 'Sentinel Ready'}</span>
           </div>
 
           {/* Run Analysis Button */}
@@ -59,7 +63,14 @@ export default function Header({ modelName, onRunAnalysis, isLoading }) {
             }`}
           >
             <Zap className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>{isLoading ? 'Analyzing Impact...' : 'Analyze with Grok AI'}</span>
+            <span>
+              {isLoading 
+                ? 'Analyzing Impact...' 
+                : hasAnalyzed 
+                ? 'Re-analyze Payload' 
+                : 'Analyze with Grok AI'
+              }
+            </span>
           </button>
         </div>
 

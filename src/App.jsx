@@ -4,6 +4,7 @@ import StatsOverview from './components/StatsOverview';
 import SchemaDiffView from './components/SchemaDiffView';
 import ImpactCard from './components/ImpactCard';
 import HealthyMappingsView from './components/HealthyMappingsView';
+import IntroHero from './components/IntroHero';
 
 import oldSchema from '../data/old_schema.json';
 import newSchema from '../data/new_schema.json';
@@ -14,7 +15,8 @@ import {
   Bot, 
   Sparkles, 
   RefreshCw, 
-  Activity
+  Activity,
+  ArrowLeft
 } from 'lucide-react';
 
 // Hardcoded synthetic analysis results matching prototype baseline metrics
@@ -66,34 +68,61 @@ export default function App() {
   });
 
   const [aiAnalyses, setAiAnalyses] = useState(HARDCODED_ANALYSES);
+  const [hasAnalyzed, setHasAnalyzed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState('');
-  const [lastAnalyzedTime, setLastAnalyzedTime] = useState('12:00:00 AM');
+  const [lastAnalyzedTime, setLastAnalyzedTime] = useState('');
 
   // Initial schema diff calculation
   useEffect(() => {
     const result = analyzeSchemaChanges(oldSchema, newSchema, mappingConfig);
     setAnalysisState(result);
-    setLastAnalyzedTime(new Date().toLocaleTimeString());
   }, []);
 
   // Handler when clicking "Analyze with Grok AI"
   const handleRunAnalysis = async () => {
     setIsLoading(true);
 
-    // Step 1: Brief loading simulation (~1 second)
-    setLoadingStep('Cross-referencing schema drift against integration mapping graph...');
-    await new Promise(r => setTimeout(r, 450));
+    try {
+      // Step 1: Loading simulation
+      setLoadingStep('Cross-referencing schema drift against integration mapping graph...');
+      await new Promise(r => setTimeout(r, 450));
 
-    // Step 2: Synthesis simulation
-    setLoadingStep('Grok AI engine synthesizing remediation strategy & confidence scores...');
-    await new Promise(r => setTimeout(r, 550));
+      // Step 2: Synthesis simulation / API call
+      setLoadingStep('Grok AI engine synthesizing remediation strategy & confidence scores...');
 
-    // Complete loading state & present analyses
-    setAiAnalyses(HARDCODED_ANALYSES);
-    setLastAnalyzedTime(new Date().toLocaleTimeString());
-    setIsLoading(false);
-    setLoadingStep('');
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          affectedMappings: analysisState.affectedMappings,
+          schemaChanges: analysisState.detectedChanges
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.analyses && data.analyses.length > 0) {
+          setAiAnalyses(data.analyses);
+        } else {
+          setAiAnalyses(HARDCODED_ANALYSES);
+        }
+      } else {
+        setAiAnalyses(HARDCODED_ANALYSES);
+      }
+    } catch (err) {
+      console.warn('Backend API call fallback:', err);
+      setAiAnalyses(HARDCODED_ANALYSES);
+    } finally {
+      setLastAnalyzedTime(new Date().toLocaleTimeString());
+      setHasAnalyzed(true);
+      setIsLoading(false);
+      setLoadingStep('');
+    }
+  };
+
+  const handleResetToIntro = () => {
+    setHasAnalyzed(false);
   };
 
   return (
@@ -103,98 +132,120 @@ export default function App() {
       <Header 
         onRunAnalysis={handleRunAnalysis} 
         isLoading={isLoading} 
+        hasAnalyzed={hasAnalyzed}
       />
 
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 flex-1 w-full">
 
-        {/* Top Metric Cards */}
-        <StatsOverview 
-          totalMappings={analysisState.totalMappingsCount}
-          affectedCount={analysisState.affectedMappings.length}
-          criticalCount={analysisState.detectedChanges.length}
-          healthyCount={analysisState.healthyMappings.length}
-        />
-
-        {/* Schema Comparison Visualizer */}
-        <SchemaDiffView 
-          oldSchema={oldSchema}
-          newSchema={newSchema}
-          detectedChanges={analysisState.detectedChanges}
-        />
-
-        {/* Action & Status Headline */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-2 border-b border-slate-800">
-          <div>
-            <div className="flex items-center space-x-2">
-              <Bot className="w-5 h-5 text-indigo-400" />
-              <h2 className="text-lg font-bold text-white tracking-tight">
-                AI Impact Analysis &amp; Remediation Plan
-              </h2>
-            </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Grok AI agent cross-references affected mapping nodes to compute break classifications and fixes
-            </p>
-          </div>
-
-          <div className="flex items-center space-x-3 text-xs text-slate-400">
-            {lastAnalyzedTime && (
-              <span className="font-mono text-[11px] text-slate-500 flex items-center gap-1">
-                <Activity className="w-3 h-3 text-emerald-400" />
-                Updated at {lastAnalyzedTime}
-              </span>
-            )}
-            <button
-              onClick={handleRunAnalysis}
-              disabled={isLoading}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-medium text-slate-300 transition-colors cursor-pointer"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 text-slate-400 ${isLoading ? 'animate-spin' : ''}`} />
-              <span>Re-analyze Payload</span>
-            </button>
-          </div>
-        </div>
-
         {/* Loading Overlay State */}
         {isLoading && (
-          <div className="mb-6 p-8 rounded-2xl glass-card border border-indigo-500/30 text-center flex flex-col items-center justify-center space-y-4 glow-indigo">
+          <div className="my-12 p-12 rounded-3xl glass-card border border-indigo-500/40 text-center flex flex-col items-center justify-center space-y-5 glow-indigo bg-slate-900/80 animate-in fade-in duration-300">
             <div className="relative">
-              <div className="w-12 h-12 rounded-full border-2 border-indigo-500/20 border-t-indigo-400 animate-spin"></div>
-              <Sparkles className="w-5 h-5 text-indigo-400 absolute inset-0 m-auto animate-pulse" />
+              <div className="w-16 h-16 rounded-full border-4 border-indigo-500/20 border-t-indigo-400 animate-spin"></div>
+              <Sparkles className="w-6 h-6 text-indigo-400 absolute inset-0 m-auto animate-pulse" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white mb-1">
-                Autonomous AI Agent Active
+              <h3 className="text-lg font-bold text-white mb-1">
+                Autonomous Grok AI Sentinel Active
               </h3>
-              <p className="text-xs font-mono text-indigo-300 animate-pulse">
+              <p className="text-sm font-mono text-indigo-300 animate-pulse">
                 {loadingStep}
               </p>
             </div>
           </div>
         )}
 
-        {/* Affected Mappings Cards Grid */}
-        {!isLoading && (
-          <div className="space-y-4 mb-8">
-            {aiAnalyses.map((analysis, idx) => {
-              const matchedMapping = analysisState.affectedMappings.find(
-                m => m.id === analysis.mapping_id
-              );
-              return (
-                <ImpactCard 
-                  key={analysis.mapping_id || idx}
-                  analysis={analysis}
-                  mapping={matchedMapping}
-                />
-              );
-            })}
-          </div>
+        {/* Intro View (Before clicking Analyze) */}
+        {!hasAnalyzed && !isLoading && (
+          <IntroHero 
+            onRunAnalysis={handleRunAnalysis} 
+            isLoading={isLoading} 
+          />
         )}
 
-        {/* Healthy Mappings Table */}
-        <HealthyMappingsView 
-          healthyMappings={analysisState.healthyMappings}
-        />
+        {/* Analysis Dashboard View (Only after clicking Analyze) */}
+        {hasAnalyzed && !isLoading && (
+          <div className="space-y-6 animate-in fade-in duration-500">
+            
+            {/* Top Navigation & Status Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+              <div>
+                <div className="flex items-center space-x-2">
+                  <Bot className="w-5 h-5 text-indigo-400" />
+                  <h2 className="text-lg font-bold text-white tracking-tight">
+                    AI Impact Analysis &amp; Remediation Plan
+                  </h2>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Grok AI agent cross-references affected mapping nodes to compute break classifications and fixes
+                </p>
+              </div>
+
+              <div className="flex items-center space-x-3 text-xs text-slate-400">
+                {lastAnalyzedTime && (
+                  <span className="font-mono text-[11px] text-slate-500 flex items-center gap-1">
+                    <Activity className="w-3 h-3 text-emerald-400" />
+                    Updated at {lastAnalyzedTime}
+                  </span>
+                )}
+                
+                <button
+                  onClick={handleResetToIntro}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-medium text-slate-300 transition-colors cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Back to Overview</span>
+                </button>
+
+                <button
+                  onClick={handleRunAnalysis}
+                  disabled={isLoading}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-indigo-900/40 hover:bg-indigo-900/60 border border-indigo-700/50 text-xs font-medium text-indigo-200 transition-colors cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 text-indigo-400 ${isLoading ? 'animate-spin' : ''}`} />
+                  <span>Re-analyze</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Top Metric Cards */}
+            <StatsOverview 
+              totalMappings={analysisState.totalMappingsCount}
+              affectedCount={analysisState.affectedMappings.length}
+              criticalCount={analysisState.detectedChanges.length}
+              healthyCount={analysisState.healthyMappings.length}
+            />
+
+            {/* Schema Comparison Visualizer */}
+            <SchemaDiffView 
+              oldSchema={oldSchema}
+              newSchema={newSchema}
+              detectedChanges={analysisState.detectedChanges}
+            />
+
+            {/* Affected Mappings Cards Grid */}
+            <div className="space-y-4 mb-8">
+              {aiAnalyses.map((analysis, idx) => {
+                const matchedMapping = analysisState.affectedMappings.find(
+                  m => m.id === analysis.mapping_id
+                );
+                return (
+                  <ImpactCard 
+                    key={analysis.mapping_id || idx}
+                    analysis={analysis}
+                    mapping={matchedMapping}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Healthy Mappings Table */}
+            <HealthyMappingsView 
+              healthyMappings={analysisState.healthyMappings}
+            />
+          </div>
+        )}
 
       </main>
 
